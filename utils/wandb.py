@@ -12,7 +12,7 @@ def init_wandb(model, cfg) -> None:
     """
     
     wandb.init(
-        name=cfg.NAME,
+        name="BANA",
         config=cfg,
         project=cfg.PROJECT,
     )
