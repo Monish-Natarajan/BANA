@@ -14,7 +14,7 @@ from data.voc import VOC_box
 from configs.defaults import _C
 from models.ClsNet import Labeler
 
-from utils.wandb import init_wandb, wandb_log, wandb_save_summary
+from utils.wandb import init_wandb, wandb_log
 
 
 
