@@ -34,7 +34,7 @@ CLASSES = (
 class VOC_box(Dataset):
     def __init__(self, cfg, transforms=None):
         if cfg.DATA.MODE == "train":
-            txt_name = "train_aug.txt"
+            txt_name = "train.txt"
         if cfg.DATA.MODE == "val":
             txt_name = "val.txt"
         
@@ -97,7 +97,7 @@ class VOC_seg(Dataset):
     def __init__(self, cfg, transforms=None):
         self.train = False
         if cfg.DATA.MODE == "train_weak":
-            txt_name = "train_aug.txt"
+            txt_name = "train.txt"
             self.train = True
         if cfg.DATA.MODE == "val":
             txt_name = "val.txt"

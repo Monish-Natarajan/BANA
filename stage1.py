@@ -14,7 +14,8 @@ from data.voc import VOC_box
 from configs.defaults import _C
 from models.ClsNet import Labeler
 
-logger = logging.getLogger("stage1")
+from utils.wandb import init_wandb, wandb_log, wandb_save_summary
+
 
 
 def my_collate(batch):
@@ -40,18 +41,13 @@ def my_collate(batch):
 
 
 def main(cfg):
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S")
     ch = logging.StreamHandler(stream=sys.stdout)
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
-    logger.addHandler(ch)
     fh = logging.FileHandler(f"./logs/{cfg.NAME}.txt")
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.info(" ".join(["\n{}: {}".format(k, v) for k,v in cfg.items()]))
     
     if cfg.SEED:
         np.random.seed(cfg.SEED)
@@ -84,12 +80,15 @@ def main(cfg):
     )
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.SOLVER.MILESTONES, gamma=0.1)
     criterion = nn.CrossEntropyLoss()
+
+    # Initializing W&B
+    init_wandb(model, cfg)
     
     model.train()
     iterator = iter(train_loader)
     storages = {"CE": 0,}
     interval_verbose = cfg.SOLVER.MAX_ITER // 40
-    logger.info(f"START {cfg.NAME} -->")
+
     for it in range(1, cfg.SOLVER.MAX_ITER+1):
         try:
             sample = next(iterator)
@@ -115,11 +114,13 @@ def main(cfg):
         storages["CE"] += loss.item()
         if it % interval_verbose == 0:
             for k in storages.keys(): storages[k] /= interval_verbose
-            logger.info("{:3d}/{:3d}  Loss (CE): {:.4f}  lr: {}".format(it, cfg.SOLVER.MAX_ITER, storages["CE"], optimizer.param_groups[0]["lr"]))
             for k in storages.keys(): storages[k] = 0
+
+        # Logging on W&B
+        wandb_log(loss.item(), scheduler.get_last_lr(), it)
     torch.save(model.state_dict(), f"./weights/{cfg.NAME}.pt")
-    logger.info("--- SAVED ---")
-    logger.info(f"END {cfg.NAME} -->")
+
+    wandb.finish()
 
 
 def get_args():
