@@ -14,6 +14,7 @@ from data.voc import VOC_box
 from configs.defaults import _C
 from models.ClsNet import Labeler
 
+import wandb
 from utils.wandb import init_wandb, wandb_log
 
 
@@ -117,8 +118,10 @@ def main(cfg):
             for k in storages.keys(): storages[k] = 0
 
         # Logging on W&B
-        wandb_log(loss.item(), scheduler.get_last_lr(), it)
+        wandb_log(loss.item(), optimizer.param_groups[0]["lr"], it)
+
     torch.save(model.state_dict(), f"./weights/{cfg.NAME}.pt")
+    wandb.save(f"./weights/{cfg.NAME}.pt")
 
     wandb.finish()
 
