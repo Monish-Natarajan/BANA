@@ -38,7 +38,7 @@ class VOC_box(Dataset):
         if cfg.DATA.MODE == "val":
             txt_name = "val.txt"
         
-        f_path = os.path.join(cfg.DATA.ROOT, "ImageSets/Segmentation", txt_name)
+        f_path = os.path.join(cfg.DATA.ROOT, "ImageSets/SegmentationAug", txt_name)
         self.filenames  = [x.split('\n')[0] for x in open(f_path)]
         self.transforms = transforms
         
@@ -97,7 +97,7 @@ class VOC_seg(Dataset):
     def __init__(self, cfg, transforms=None):
         self.train = False
         if cfg.DATA.MODE == "train_weak":
-            txt_name = "train_aug.txt"
+            txt_name = "train.txt"
             self.train = True
         if cfg.DATA.MODE == "val":
             txt_name = "val.txt"
