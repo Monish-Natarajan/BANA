@@ -9,6 +9,7 @@ from __future__ import absolute_import, print_function
 
 from collections import OrderedDict
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,9 +28,7 @@ class _ConvBnReLU(nn.Sequential):
     Cascade of 2D convolution, batch norm, and ReLU.
     """
 #     BATCH_NORM = _BATCH_NORM
-    def __init__(
-        self, in_ch, norm_type, out_ch, kernel_size, stride, padding, dilation, relu=True
-    ):
+    def __init__(self, in_ch, norm_type, out_ch, kernel_size, stride, padding, dilation, relu=True):
         super(_ConvBnReLU, self).__init__()
         self.add_module(
             "conv",
@@ -42,7 +41,7 @@ class _ConvBnReLU(nn.Sequential):
             self.add_module("relu", nn.ReLU())
 
 
-class _Bottleneck(nn.Module):
+class _Bottleneck(pl.Module):  # check whether it is pl.LightningModule
     """
     Bottleneck block of MSRA ResNet.
     """
@@ -102,7 +101,9 @@ class _Stem(nn.Sequential):
         self.add_module("pool", nn.MaxPool2d(3, 2, 1, ceil_mode=True))
 
 
-class _Flatten(nn.Module):
+class _Flatten(pl.Module):
+    def __init__(self):
+        pass 
     def forward(self, x):
         return x.view(x.size(0), -1)
 
@@ -212,7 +213,7 @@ class ASPPPooling(nn.Sequential):
         return F.interpolate(x, size=size, mode='bilinear', align_corners=False)
 
 
-class ASPP(nn.Module):
+class ASPP(pl.Module): 
     def __init__(self, output_stride, sync_bn, global_avg_pool_bn=False, in_channels=2048, out_channels=256):
         super(ASPP, self).__init__()
         if sync_bn:
@@ -256,7 +257,7 @@ class ASPP(nn.Module):
                 m.bias.data.zero_()
 
 
-class VGG16(nn.Module):
+class VGG16(pl.Module):
     '''
     This network design is borrowed from AffinitNet.
     Please, also see their paper (Learning Pixel-level Semantic Affinity with Image-level Supervision, CVPR 2018), and codes (https://github.com/jiwoon-ahn/psa/tree/master/network).

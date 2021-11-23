@@ -1,4 +1,5 @@
 import pytorch-lightning as pl
+from pytorch_lightning.loggers import WandbLogger
 import os
 import sys
 import random
@@ -78,6 +79,30 @@ class VOCDataModule(pl.LightningDataModule):
         if cfg.DATA.MODE == "val":
             return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
 
+class LabelerLitModel(pl.LightningModule):
+    def __init__(self,cfg):
+        super().__init__()
+        self.model=Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE)
+        self.cfg=cfg
+        self.params = self.model.get_params()
+        self.scheduler=optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.SOLVER.MILESTONES, gamma=0.1)
+        self.criterion = nn.CrossEntropyLoss()
+    def training_step(self, batch, batch_idx):
+        
+
+    def configure_optimizers(self):
+        lr = self.cfg.SOLVER.LR
+        wd = self.cfg.SOLVER.WEIGHT_DECAY
+        optimizer = optim.SGD(
+        [{"params":self.params[0], "lr":lr,    "weight_decay":wd},
+         {"params":self.params[1], "lr":2*lr,  "weight_decay":0 },
+         {"params":self.params[2], "lr":10*lr, "weight_decay":wd},
+         {"params":self.params[3], "lr":20*lr, "weight_decay":0 }], 
+        momentum=self.cfg.SOLVER.MOMENTUM
+        )
+    return optimizer
+        
+
 def main(cfg):
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
@@ -108,28 +133,28 @@ def main(cfg):
     # trainset = VOC_box(cfg, tr_transforms)
     # train_loader = DataLoader(trainset, batch_size=cfg.DATA.BATCH_SIZE, collate_fn=my_collate, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
     
-    model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
+    # model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
     model.backbone.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"), strict=False)
     
-    params = model.get_params()
-    lr = cfg.SOLVER.LR
-    wd = cfg.SOLVER.WEIGHT_DECAY
-    optimizer = optim.SGD(
-        [{"params":params[0], "lr":lr,    "weight_decay":wd},
-         {"params":params[1], "lr":2*lr,  "weight_decay":0 },
-         {"params":params[2], "lr":10*lr, "weight_decay":wd},
-         {"params":params[3], "lr":20*lr, "weight_decay":0 }], 
-        momentum=cfg.SOLVER.MOMENTUM
-    )
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.SOLVER.MILESTONES, gamma=0.1)
-    criterion = nn.CrossEntropyLoss()
+    # params = model.get_params()
+    # lr = cfg.SOLVER.LR
+    # wd = cfg.SOLVER.WEIGHT_DECAY
+    # optimizer = optim.SGD(
+    #     [{"params":params[0], "lr":lr,    "weight_decay":wd},
+    #      {"params":params[1], "lr":2*lr,  "weight_decay":0 },
+    #      {"params":params[2], "lr":10*lr, "weight_decay":wd},
+    #      {"params":params[3], "lr":20*lr, "weight_decay":0 }], 
+    #     momentum=cfg.SOLVER.MOMENTUM
+    # )
+    # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.SOLVER.MILESTONES, gamma=0.1)
+    # criterion = nn.CrossEntropyLoss()
     
-    model.train()
-    iterator = iter(train_loader)
+    # model.train()
+    iterator = iter(train_loader)                   
     storages = {"CE": 0,}
-    interval_verbose = cfg.SOLVER.MAX_ITER // 40
+    interval_verbose = cfg.SOLVER.MAX_ITER // 40           # This is for max iterations to pass to log
     logger.info(f"START {cfg.NAME} -->")
-    for it in range(1, cfg.SOLVER.MAX_ITER+1):
+    for it in range(1, cfg.SOLVER.MAX_ITER+1):             # max epoch
         try:
             sample = next(iterator)
         except:
@@ -147,10 +172,10 @@ def main(cfg):
         target = torch.zeros(logits.shape[0], dtype=torch.long)
         target[:fg_t.shape[0]] = fg_t
         loss = criterion(logits, target.cuda())
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        scheduler.step()
+        # optimizer.zero_grad()
+        # loss.backward()
+        # optimizer.step()
+        # scheduler.step()
         storages["CE"] += loss.item()
         if it % interval_verbose == 0:
             for k in storages.keys(): storages[k] /= interval_verbose

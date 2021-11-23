@@ -1,7 +1,7 @@
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from .Layers import VGG16
 
 
@@ -25,7 +25,7 @@ def pad_for_grid(mask, grid_size):
     return out
 
 
-class Labeler(nn.Module):
+class Labeler(pl.Module):
     def __init__(self, num_classes, roi_size, grid_size):
         super().__init__()
         self.backbone = VGG16(dilation=1)
