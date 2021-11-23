@@ -39,6 +39,44 @@ def my_collate(batch):
     sample["batchID_of_box"] = torch.tensor(batchID_of_box, dtype=torch.long)
     return sample
 
+class VOCDataModule(pl.LightningDataModule):
+    def __init__( cfg):
+        super().__init__()
+        # this line allows to access init params with 'self.hparams' attribute
+        # Check whether to save hparams 
+        self.save_hyperparameters(logger=False)      
+        # data transformations
+        self.transforms= Tr.Compose([
+        Tr.RandomScale(0.5, 1.5),
+        Tr.ResizeRandomCrop(cfg.DATA.CROP_SIZE), 
+        Tr.RandomHFlip(0.5), 
+        Tr.ColorJitter(0.5,0.5,0.5,0),
+        Tr.Normalize_Caffe(),
+        ])
+        # self.dims= Should be the size of each image
+        self.dataset=None
+    @ property
+    def num_classes(self) -> int:
+        return cfg.DATA.NUM_CLASSES
+    def prepare_data(self):
+        # Not needed
+        pass 
+    def setup(self):
+        if cfg.DATA.MODE == "train":
+            txt_name = "train_aug.txt"
+        if cfg.DATA.MODE == "val":
+            txt_name = "val.txt"
+        self.dataset = VOC_box(cfg, self.transforms)
+    def train_dataloader(self):
+        if cfg.DATA.MODE == "train":
+            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+    def val_dataloader(self):
+        if cfg.DATA.MODE == "val":
+            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+    def test_dataloader(self):
+        ''' NEED TO CHECK THIS'''
+        if cfg.DATA.MODE == "val":
+            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
 
 def main(cfg):
     logger.setLevel(logging.DEBUG)
@@ -60,15 +98,15 @@ def main(cfg):
         random.seed(cfg.SEED)
         os.environ["PYTHONHASHSEED"] = str(cfg.SEED)
 
-    tr_transforms = Tr.Compose([
-        Tr.RandomScale(0.5, 1.5),
-        Tr.ResizeRandomCrop(cfg.DATA.CROP_SIZE), 
-        Tr.RandomHFlip(0.5), 
-        Tr.ColorJitter(0.5,0.5,0.5,0),
-        Tr.Normalize_Caffe(),
-    ])
-    trainset = VOC_box(cfg, tr_transforms)
-    train_loader = DataLoader(trainset, batch_size=cfg.DATA.BATCH_SIZE, collate_fn=my_collate, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
+    # tr_transforms = Tr.Compose([
+    #     Tr.RandomScale(0.5, 1.5),
+    #     Tr.ResizeRandomCrop(cfg.DATA.CROP_SIZE), 
+    #     Tr.RandomHFlip(0.5), 
+    #     Tr.ColorJitter(0.5,0.5,0.5,0),
+    #     Tr.Normalize_Caffe(),
+    # ])
+    # trainset = VOC_box(cfg, tr_transforms)
+    # train_loader = DataLoader(trainset, batch_size=cfg.DATA.BATCH_SIZE, collate_fn=my_collate, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
     
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
     model.backbone.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"), strict=False)

@@ -31,18 +31,17 @@ CLASSES = (
     "tvmonitor"
 )
 
-
+# stage-1
 class VOC_box(Dataset):
-    def __init__(self, cfg, transforms=None):
-        if cfg.DATA.MODE == "train":
-            txt_name = "train_aug.txt"
-        if cfg.DATA.MODE == "val":
-            txt_name = "val.txt"
+    def __init__(self, cfg, transforms=None,txt_name):
+        # if cfg.DATA.MODE == "train":
+        #     txt_name = "train_aug.txt"
+        # if cfg.DATA.MODE == "val":
+        #     txt_name = "val.txt"
         
         f_path = os.path.join(cfg.DATA.ROOT, "ImageSets/Segmentation", txt_name)
         self.filenames  = [x.split('\n')[0] for x in open(f_path)]
         self.transforms = transforms
-        
         self.img_path  = os.path.join(cfg.DATA.ROOT, 'JPEGImages/{}.jpg')
         self.xml_path  = os.path.join(cfg.DATA.ROOT, 'Annotations/{}.xml')
         self.mask_path = os.path.join(cfg.DATA.ROOT, 'BgMaskfromBoxes/{}.png')
@@ -93,7 +92,7 @@ class VOC_box(Dataset):
             bboxes.append([bb_wmin, bb_hmin, bb_wmax, bb_hmax, cls_num])
         return np.array(bboxes).astype('float32')
 
-
+# stage-2
 class VOC_seg(Dataset):
     def __init__(self, cfg, transforms=None):
         self.train = False
