@@ -125,13 +125,15 @@ class LabelerLitModel(pl.LightningModule):
         self.val_losses=[]
         if self.current_epoch()+1 % self.interval_verbose ==0:
             # log
+            self.log("val-average-loss",sum(self.avgval_losses) / len(self.avgval_losses))
             self.avgval_losses=[]
 
     def training_epoch_end(self, outputs):
-        self.avgtrain_losses.append(sum(self.val_losses) / len(self.train_losses))
+        self.avgtrain_losses.append(sum(self.train_losses) / len(self.train_losses))
         self.train_losses=[]
         if self.current_epoch()+1 % self.interval_verbose ==0:
             # log
+            self.log("train-average-loss",sum(self.avgtrain_losses) / len(self.avgtrain_losses))
             self.avgtrain_losses=[] 
     
     def test_step(self, batch, batch_idx):
