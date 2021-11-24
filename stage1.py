@@ -5,7 +5,6 @@ from pytorch_lightning import Trainer
 import os
 import sys
 import random
-import argparse
 import numpy as np
 import torch
 
@@ -38,7 +37,7 @@ def stage1(args):
 
     datamodule=VOCDataModule(cfg)
     model=LabelerLitModel(cfg)
-    trainer = Trainer(max_epochs=cfg.SOLVER.MAX_ITER,logger=wandb_logger,callbacks=[checkpoint_callback],gpus=[args.gpu_id])
+    trainer = Trainer(max_epochs=cfg.SOLVER.MAX_ITER,logger=wandb_logger,callbacks=[checkpoint_callback],gpus=[int(args.gpu_id)])
     # load checkpoint 
     # need to see whether the function also works on .pt files
     model.backbone=model.backbone.load_from_checkpoint(f"./weights/{cfg.MODEL.WEIGHTS}")  # Just loading pre-trained weights
