@@ -168,11 +168,14 @@ def get_args():
     parser.add_argument("--gpu-id", type=str, default="0", help="select a GPU index")
     return parser.parse_args()
 
+def process_cfg(config_file):
+    cfg = _C.clone()
+    cfg.merge_from_file(config_file)
+    cfg.freeze()
+    return cfg 
 
 if __name__ == "__main__":
     args = get_args()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu_id
-    cfg = _C.clone()
-    cfg.merge_from_file(args.config_file)
-    cfg.freeze()
+    cfg=process_cfg(args.config_file)
     stage2(cfg)
