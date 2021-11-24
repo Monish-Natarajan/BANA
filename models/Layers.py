@@ -41,7 +41,7 @@ class _ConvBnReLU(nn.Sequential):
             self.add_module("relu", nn.ReLU())
 
 
-class _Bottleneck(pl.Module):  # check whether it is pl.LightningModule
+class _Bottleneck(pl.LightningModule):  # check whether it is pl.LightningModule
     """
     Bottleneck block of MSRA ResNet.
     """
@@ -101,7 +101,7 @@ class _Stem(nn.Sequential):
         self.add_module("pool", nn.MaxPool2d(3, 2, 1, ceil_mode=True))
 
 
-class _Flatten(pl.Module):
+class _Flatten(pl.LightningModule):
     def __init__(self):
         pass 
     def forward(self, x):
@@ -213,7 +213,7 @@ class ASPPPooling(nn.Sequential):
         return F.interpolate(x, size=size, mode='bilinear', align_corners=False)
 
 
-class ASPP(pl.Module): 
+class ASPP(pl.LightningModule): 
     def __init__(self, output_stride, sync_bn, global_avg_pool_bn=False, in_channels=2048, out_channels=256):
         super(ASPP, self).__init__()
         if sync_bn:
@@ -257,7 +257,7 @@ class ASPP(pl.Module):
                 m.bias.data.zero_()
 
 
-class VGG16(pl.Module):
+class VGG16(pl.LightningModule):
     '''
     This network design is borrowed from AffinitNet.
     Please, also see their paper (Learning Pixel-level Semantic Affinity with Image-level Supervision, CVPR 2018), and codes (https://github.com/jiwoon-ahn/psa/tree/master/network).

@@ -21,7 +21,7 @@ from utils.densecrf import DENSE_CRF
 logger = logging.getLogger("stage2")
 
 
-def main(cfg):
+def stage2(cfg):
     logger.setLevel(logging.DEBUG)
     logger.propagate = False
     formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S")
@@ -175,4 +175,4 @@ if __name__ == "__main__":
     cfg = _C.clone()
     cfg.merge_from_file(args.config_file)
     cfg.freeze()
-    main(cfg)
+    stage2(cfg)

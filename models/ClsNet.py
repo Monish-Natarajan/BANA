@@ -25,7 +25,7 @@ def pad_for_grid(mask, grid_size):
     return out
 
 
-class Labeler(pl.Module):
+class Labeler(pl.LightningModule):
     def __init__(self, num_classes, roi_size, grid_size):
         super().__init__()
         self.backbone = VGG16(dilation=1)
