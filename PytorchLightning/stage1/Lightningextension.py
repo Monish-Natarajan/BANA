@@ -136,7 +136,7 @@ class LabelerLitModel(pl.LightningModule):
     
     def test_step(self, batch, batch_idx):
         if self.cfg.DATA.MODE == "val":
-             #to do... right now kept same as train
+             #to do... right now kept same as validation
              sample=val_batch                      # Need to check this
              loss = common_step(sample)
              result=pl.EvalResult(loss)
