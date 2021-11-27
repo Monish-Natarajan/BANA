@@ -1,7 +1,6 @@
 import os
 import sys
 import random
-import logging
 import argparse
 import numpy as np
 import torch
@@ -18,23 +17,11 @@ from configs.defaults import _C
 from models.ClsNet import Labeler, pad_for_grid
 from utils.densecrf import DENSE_CRF
 
-logger = logging.getLogger("stage2")
+
+import wandb
 
 
 def main(cfg):
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-    formatter = logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%m/%d %H:%M:%S")
-    ch = logging.StreamHandler(stream=sys.stdout)
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-    fh = logging.FileHandler(f"./logs/{cfg.NAME}.txt")
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.info(" ".join(["\n{}: {}".format(k, v) for k,v in cfg.items()]))
-    
     if cfg.SEED:
         np.random.seed(cfg.SEED)
         torch.manual_seed(cfg.SEED)
@@ -46,7 +33,11 @@ def main(cfg):
     train_loader = DataLoader(trainset, batch_size=1)
     
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
-    model.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"))
+
+    # Restore the model saved on WandB
+    model_stage_1 = wandb.restore('weights/ClsNet.pt', run_path='dl-segmentation/MLRC-BANA/3tlmc1pv')
+    model.load_state_dict(torch.load(model_stage_1.name))
+
     WEIGHTS = torch.clone(model.classifier.weight.data)
     model.eval()
     
@@ -62,7 +53,6 @@ def main(cfg):
             os.mkdir(sub_folder)
             save_paths += [os.path.join(sub_folder, "{}.png")]
             
-    logger.info(f"START {cfg.NAME} -->")
     with torch.no_grad():
         for it, (img, bboxes, bg_mask) in enumerate(tqdm(train_loader)):
             '''
@@ -159,8 +149,6 @@ def main(cfg):
             if cfg.SAVE_PSEUDO_LABLES:
                 for pseudo, save_path in zip([Y_crf, Y_ret], save_paths):
                     Image.fromarray(pseudo).save(save_path.format(fn))
-    logger.info(f"END {cfg.NAME} -->")
-
 
 def get_args():
     parser = argparse.ArgumentParser()

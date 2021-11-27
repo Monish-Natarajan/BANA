@@ -4,7 +4,7 @@ SAVE_PSEUDO_LABLES: True
 SEED: 0
 
 DATA: 
-  ROOT: "/kaggle/working/data/VOCdevkit/VOC2012"
+  ROOT: "/content/data/VOCdevkit/VOC2012"
   NUM_CLASSES: 21 # For VOC
   MODE: "train"
   
