@@ -35,7 +35,7 @@ class VOCDataModule(pl.LightningDataModule):
         super().__init__()
         # this line allows to access init params with 'self.hparams' attribute
         # Check whether to save hparams 
-        self.save_hyperparameters(logger=False)      
+        # self.save_hyperparameters(logger=False)      
         # data transformations
         self.transforms= Tr.Compose([
         Tr.RandomScale(0.5, 1.5),
