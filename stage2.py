@@ -46,11 +46,13 @@ def main(cfg):
     
     if cfg.SAVE_PSEUDO_LABLES:
         folder_name = os.path.join(cfg.DATA.ROOT, cfg.NAME)
-        os.mkdir(folder_name)
+        if not os.path.isdir(folder_name):
+            os.mkdir(folder_name)
         save_paths = []
-        for txt in ("Y_crf", "Y_ret"):
+        for txt in ("Y_crf", "Y_ret", "Y_crf_u0"):
             sub_folder = folder_name + f"/{txt}"
-            os.mkdir(sub_folder)
+            if not os.path.isdir(folder_name):
+                os.mkdir(sub_folder)
             save_paths += [os.path.join(sub_folder, "{}.png")]
             
     with torch.no_grad():
@@ -61,9 +63,11 @@ def main(cfg):
             bg_mask : (1,H,W)   float32
             '''
             fn = trainset.filenames[it]
-            rgb_img = np.array(Image.open(trainset.img_path.format(fn)))
-            bboxes = bboxes[0] # (1,K,5) --> (K,5)
-            bg_mask = bg_mask[None] # (1,H,W) --> (1,1,H,W)
+
+            rgb_img = np.array(Image.open(trainset.img_path.format(fn))) # RGB input image
+            bboxes = bboxes[0] # (1,K,5) --> (K,5) bounding boxes
+            bg_mask = bg_mask[None] # (1,H,W) --> (1,1,H,W) background mask
+
             img_H, img_W = img.shape[-2:]
             norm_H, norm_W = (img_H-1)/2, (img_W-1)/2
             bboxes[:,[0,2]] = bboxes[:,[0,2]]*norm_W + norm_W
@@ -71,7 +75,7 @@ def main(cfg):
             bboxes = bboxes.long()
             gt_labels = bboxes[:,4].unique()
             
-            features = model.get_features(img.cuda())
+            features = model.get_features(img.cuda()) # Output from the model backbone
             features = F.interpolate(features, img.shape[-2:], mode='bilinear', align_corners=True)
             padded_features = pad_for_grid(features, cfg.MODEL.GRID_SIZE)
             padded_bg_mask = pad_for_grid(bg_mask.cuda(), cfg.MODEL.GRID_SIZE)
@@ -80,6 +84,8 @@ def main(cfg):
             bg_protos = bg_protos[0,valid_gridIDs] # (1,GS**2,dims,1,1) --> (len(valid_gridIDs),dims,1,1)
             normed_bg_p = F.normalize(bg_protos)
             normed_f = F.normalize(features)
+
+            # Background attention maps (u0)
             bg_attns = F.relu(torch.sum(normed_bg_p*normed_f, dim=1))
             bg_attn = torch.mean(bg_attns, dim=0, keepdim=True) # (len(valid_gridIDs),H,W) --> (1,H,W)
             bg_attn[bg_attn < cfg.MODEL.BG_THRESHOLD * bg_attn.max()] = 0
@@ -87,6 +93,7 @@ def main(cfg):
             region_inside_bboxes = Bg_unary[0]==0 # (H,W)
             Bg_unary[:,region_inside_bboxes] = bg_attn[:,region_inside_bboxes].detach().cpu()
             
+            # CAMS for foreground classes (uc)
             Fg_unary = []
             for uni_cls in gt_labels:
                 w_c = WEIGHTS[uni_cls][None]
@@ -97,6 +104,8 @@ def main(cfg):
                     normed_cam[:,hmin:hmax,wmin:wmax] = raw_cam[:,hmin:hmax,wmin:wmax] / denom
                 Fg_unary += [normed_cam]
             Fg_unary = torch.cat(Fg_unary, dim=0).detach().cpu()
+
+            # Final unary by contacinating foreground and background unaries
             unary = torch.cat((Bg_unary,Fg_unary), dim=0)
             unary[:,region_inside_bboxes] = torch.softmax(unary[:,region_inside_bboxes], dim=0)
             refined_unary = dCRF.inference(rgb_img, unary.numpy())
@@ -114,7 +123,37 @@ def main(cfg):
             for idx_cls, uni_cls in enumerate(gt_labels,1):
                 Y_crf[tmp_mask==idx_cls] = uni_cls
             Y_crf[tmp_mask==0] = 0
+
             
+            # Code for CRF w/o u0
+            # CAMS for background class
+            w_c = WEIGHTS[0][None]
+            raw_cam = F.relu(torch.sum(w_c*features, dim=1)) # (1,H,W)
+            Bg_normed_cam = torch.zeros_like(raw_cam)
+            for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==0]:
+                denom = raw_cam[:,hmin:hmax,wmin:wmax].max() + 1e-12
+                Bg_normed_cam[:,hmin:hmax,wmin:wmax] = raw_cam[:,hmin:hmax,wmin:wmax] / denom
+
+
+            FgBg_unary = torch.cat((Fg_unary, Bg_normed_cam.detach().cpu()), dim=0).detach().cpu()
+            FgBg_unary[:,region_inside_bboxes] = torch.softmax(FgBg_unary[:,region_inside_bboxes], dim=0)
+            FgBg_refined_unary = dCRF.inference(rgb_img, FgBg_unary.numpy())
+
+            # (Out of bboxes) reset Fg scores to zero
+            for idx_cls, uni_cls in enumerate(gt_labels,1):
+                mask = np.zeros((img_H,img_W))
+                for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==uni_cls]:
+                    mask[hmin:hmax,wmin:wmax] = 1
+                FgBg_refined_unary[idx_cls] *= mask
+
+            # Y_crf_u0
+            FgBg_tmp_mask = FgBg_refined_unary.argmax(0)
+            Y_crf_u0 = np.zeros_like(FgBg_tmp_mask, dtype=np.uint8)
+            for idx_cls, uni_cls in enumerate(gt_labels,1):
+                Y_crf_u0[FgBg_tmp_mask==idx_cls] = uni_cls
+            Y_crf_u0[FgBg_tmp_mask==0] = 0
+            
+
             # Y_ret
             tmp_Y_crf = torch.from_numpy(Y_crf) # (H,W)
             gt_labels_with_Bg = [0] + gt_labels.tolist()
@@ -129,6 +168,7 @@ def main(cfg):
                     corr = F.relu((normed_f*normed_w).sum(dim=1)) # (1,H,W)
                 corr_maps.append(corr)
             corr_maps = torch.cat(corr_maps) # (1+len(gt_labels),H,W)
+            
             
             # (Out of bboxes) reset Fg correlations to zero
             for idx_cls, uni_cls in enumerate(gt_labels_with_Bg):
@@ -146,8 +186,9 @@ def main(cfg):
                 Y_ret[tmp_mask==idx_cls] = uni_cls
             Y_ret[tmp_mask==0] = 0
             
+
             if cfg.SAVE_PSEUDO_LABLES:
-                for pseudo, save_path in zip([Y_crf, Y_ret], save_paths):
+                for pseudo, save_path in zip([Y_crf, Y_ret, Y_crf_u0], save_paths):
                     Image.fromarray(pseudo).save(save_path.format(fn))
 
 def get_args():
