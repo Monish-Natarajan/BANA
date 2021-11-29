@@ -31,7 +31,7 @@ def my_collate(batch):
     return sample
 
 class VOCDataModule(pl.LightningDataModule):
-    def __init__( cfg):
+    def __init__(cfg):
         super().__init__()
         # this line allows to access init params with 'self.hparams' attribute
         # Check whether to save hparams 
@@ -46,30 +46,31 @@ class VOCDataModule(pl.LightningDataModule):
         ])
         # self.dims= Should be the size of each image
         self.dataset=None
+        self.cfg=cfg 
     @ property
     def num_classes(self) -> int:
-        return cfg.DATA.NUM_CLASSES
+        return self.cfg.DATA.NUM_CLASSES
     def prepare_data(self):
         # Not needed
         pass 
     def setup(self):
-        if cfg.DATA.MODE == "train":
+        if self.cfg.DATA.MODE == "train":
             txt_name = "train_aug.txt"
-        if cfg.DATA.MODE == "val":
+        if self.cfg.DATA.MODE == "val":
             txt_name = "val.txt"
-        self.dataset = VOC_box(cfg, self.transforms)
+        self.dataset = VOC_box(self.cfg, self.transforms)
     def train_dataloader(self):
-        if cfg.DATA.MODE == "train":
-            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+        if self.cfg.DATA.MODE == "train":
+            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
         return None
     def val_dataloader(self):
-        if cfg.DATA.MODE == "val":
-            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+        if self.cfg.DATA.MODE == "val":
+            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
         return None
     def test_dataloader(self):
         ''' NEED TO CHECK THIS'''
-        if cfg.DATA.MODE == "val":
-            return DataLoader(self.dataset, batch_size=cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+        if self.cfg.DATA.MODE == "val":
+            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
         return None
 
 
@@ -87,6 +88,9 @@ class LabelerLitModel(pl.LightningModule):
         self.train_losses = []
         self.avgtrain_losses = []
         self.save_hyperparameters()           # to automatically log hyperparameters to W&B
+        # load checkpoint 
+        # need to see whether the function also works on .pt files
+        self.load_weights(f"./weights/{cfg.MODEL.WEIGHTS}")  # Just loading pre-trained weights
 
     def training_step(self, batch, batch_idx):
         if self.cfg.DATA.MODE == "train":
@@ -170,3 +174,6 @@ class LabelerLitModel(pl.LightningModule):
         "name": None,
         }
         return { "optimizer": optimizer,"lr_scheduler":lr_scheduler }
+    
+    def load_weights(self,path):
+        self.backbone.load_from_checkpoint(path)

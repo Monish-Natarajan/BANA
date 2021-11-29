@@ -57,7 +57,7 @@ class VOC_box(Dataset):
         bg_mask = np.array(Image.open(self.mask_path.format(fn)), dtype=np.int64)
         if self.transforms is not None:
             img, bboxes, bg_mask = self.transforms(img, bboxes, bg_mask)
-        return img, bboxes, bg_mask
+        return img, bboxes, bg_mask, self.filenames
 
     def parse_voc_xml(self, node):
         voc_dict = {}
@@ -92,7 +92,7 @@ class VOC_box(Dataset):
             bboxes.append([bb_wmin, bb_hmin, bb_wmax, bb_hmax, cls_num])
         return np.array(bboxes).astype('float32')
 
-# stage-2
+# stage-3
 class VOC_seg(Dataset):
     def __init__(self, cfg, transforms=None):
         self.train = False
