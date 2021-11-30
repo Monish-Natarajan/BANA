@@ -101,7 +101,7 @@ def main(cfg):
         bg_mask = sample["bg_mask"]
         batchID_of_box = sample["batchID_of_box"]
         ind_valid_bg_mask = bg_mask.mean(dim=(1,2,3)) > 0.125 # This is because VGG16 has output stride of 8.
-        logits = model(img.cuda(), bboxes, batchID_of_box, bg_mask.cuda(), ind_valid_bg_mask)
+        logits = model(img.cuda(), bboxes, batchID_of_box, bg_mask.cuda(), ind_valid_bg_mask, cfg.GAP)
         logits = logits[...,0,0]
         fg_t = bboxes[:,-1][:,None].expand(bboxes.shape[0], np.prod(cfg.MODEL.ROI_SIZE))
         fg_t = fg_t.flatten().long()

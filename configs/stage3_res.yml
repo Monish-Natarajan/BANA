@@ -1,6 +1,6 @@
 NAME: "SegNet_ASPP"
 
-SEED: 13
+SEED: 0
 
 DATA: 
   ROOT: "/workspace/BDH/data/VOCdevkit/VOC2012"
