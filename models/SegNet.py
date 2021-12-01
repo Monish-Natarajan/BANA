@@ -13,7 +13,7 @@ class DeepLab_LargeFOV(nn.Module):
         self.backbone = VGG16(dilation=12)
         self.is_CS = is_CS
         if self.is_CS:
-            self.temperature = 20
+            self.temperature = 20 # Scale parameter for the CS based loss
         self.classifier = nn.Conv2d(1024, num_classes, 1, bias=False)
         self.from_scratch_layers = [self.classifier]
         

@@ -35,7 +35,7 @@ def main(cfg):
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
 
     # Restore the model saved on WandB
-    model_stage_1 = wandb.restore('weights/ClsNet.pt', run_path='dl-segmentation/MLRC-BANA/3tlmc1pv')
+    model_stage_1 = wandb.restore('weights/ClsNet.pt', run_path='dl-segmentation/MLRC-BANA/yykkwjhx')
     model.load_state_dict(torch.load(model_stage_1.name))
 
     WEIGHTS = torch.clone(model.classifier.weight.data)
@@ -49,7 +49,7 @@ def main(cfg):
         if not os.path.isdir(folder_name):
             os.mkdir(folder_name)
         save_paths = []
-        for txt in ("Y_crf", "Y_ret", "Y_crf_u0"):
+        for txt in ("Y_crf", "Y_ret"):
             sub_folder = folder_name + f"/{txt}"
             if not os.path.isdir(sub_folder):
                 os.mkdir(sub_folder)
@@ -125,34 +125,6 @@ def main(cfg):
             Y_crf[tmp_mask==0] = 0
 
             
-            # Code for CRF w/o u0
-            # CAMS for background class
-            w_c = WEIGHTS[0][None]
-            raw_cam = F.relu(torch.sum(w_c*features, dim=1)) # (1,H,W)
-            Bg_normed_cam = torch.zeros_like(raw_cam)
-            for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==0]:
-                denom = raw_cam[:,hmin:hmax,wmin:wmax].max() + 1e-12
-                Bg_normed_cam[:,hmin:hmax,wmin:wmax] = raw_cam[:,hmin:hmax,wmin:wmax] / denom
-
-
-            FgBg_unary = torch.cat((Fg_unary, Bg_normed_cam.detach().cpu()), dim=0).detach().cpu()
-            FgBg_unary[:,region_inside_bboxes] = torch.softmax(FgBg_unary[:,region_inside_bboxes], dim=0)
-            FgBg_refined_unary = dCRF.inference(rgb_img, FgBg_unary.numpy())
-
-            # (Out of bboxes) reset Fg scores to zero
-            for idx_cls, uni_cls in enumerate(gt_labels,1):
-                mask = np.zeros((img_H,img_W))
-                for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==uni_cls]:
-                    mask[hmin:hmax,wmin:wmax] = 1
-                FgBg_refined_unary[idx_cls] *= mask
-
-            # Y_crf_u0
-            FgBg_tmp_mask = FgBg_refined_unary.argmax(0)
-            Y_crf_u0 = np.zeros_like(FgBg_tmp_mask, dtype=np.uint8)
-            for idx_cls, uni_cls in enumerate(gt_labels,1):
-                Y_crf_u0[FgBg_tmp_mask==idx_cls] = uni_cls
-            Y_crf_u0[FgBg_tmp_mask==0] = 0
-            
 
             # Y_ret
             tmp_Y_crf = torch.from_numpy(Y_crf) # (H,W)
@@ -188,7 +160,7 @@ def main(cfg):
             
 
             if cfg.SAVE_PSEUDO_LABLES:
-                for pseudo, save_path in zip([Y_crf, Y_ret, Y_crf_u0], save_paths):
+                for pseudo, save_path in zip([Y_crf, Y_ret], save_paths):
                     Image.fromarray(pseudo).save(save_path.format(fn))
 
 def get_args():

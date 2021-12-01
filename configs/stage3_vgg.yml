@@ -3,11 +3,12 @@ NAME: "SegNet_VGG"
 SEED: 0
 
 DATA: 
-  ROOT: "/workspace/BDH/data/VOCdevkit/VOC2012"
-  MODE: "train"
+  ROOT: "/kaggle/working/data/VOCdevkit/VOC2012"
+  MODE: "train_weak"
   PSEUDO_LABEL_FOLDER: ["Ycrf", "Yret"]
   BATCH_SIZE: 20
   CROP_SIZE: 321
+  NUM_CLASSES: 21
   
 MODEL:
   FREEZE_BN: False

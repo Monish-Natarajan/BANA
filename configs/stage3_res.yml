@@ -3,7 +3,7 @@ NAME: "SegNet_ASPP"
 SEED: 0
 
 DATA: 
-  ROOT: "/workspace/BDH/data/VOCdevkit/VOC2012"
+  ROOT: "/kaggle/working/data/VOCdevkit/VOC2012"
   MODE: "train"
   PSEUDO_LABEL_FOLDER: ["Ycrf", "Yret"]
   BATCH_SIZE: 10
