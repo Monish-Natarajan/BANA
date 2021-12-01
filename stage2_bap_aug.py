@@ -109,7 +109,7 @@ def main(cfg):
             # CAMS for background classes (ub)
             w_c_bg = WEIGHTS[0][None]
             raw_cam_bg = F.relu(torch.sum(w_c_bg*features, dim=1)) # (1,H,W)
-            normed_cam_bg = raw_cam_bg / raw_cam_bg.max()
+            normed_cam_bg = (raw_cam_bg / raw_cam_bg.max()).detach().cpu()
             unary_u0 = torch.cat((normed_cam_bg, Fg_unary), dim=0)
 
 
