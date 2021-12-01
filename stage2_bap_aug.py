@@ -105,10 +105,22 @@ def main(cfg):
                 Fg_unary += [normed_cam]
             Fg_unary = torch.cat(Fg_unary, dim=0).detach().cpu()
 
+
+            # CAMS for background classes (ub)
+            w_c_bg = WEIGHTS[0][None]
+            raw_cam_bg = F.relu(torch.sum(w_c_bg*features, dim=1)) # (1,H,W)
+            normed_cam_bg = raw_cam_bg / raw_cam_bg.max()
+            unary_u0 = torch.cat((normed_cam_bg, Fg_unary), dim=0)
+
+
             # Final unary by contacinating foreground and background unaries
             unary = torch.cat((Bg_unary,Fg_unary), dim=0)
             unary[:,region_inside_bboxes] = torch.softmax(unary[:,region_inside_bboxes], dim=0)
             refined_unary = dCRF.inference(rgb_img, unary.numpy())
+
+            # Unary witout background attn
+            unary_u0[:, region_inside_bboxes] = torch.softmax(unary_u0[:, region_inside_bboxes], dim=0)
+            refined_unary_u0 = dCRF.inference(rgb_img, unary_u0.numpy())
             
             # (Out of bboxes) reset Fg scores to zero
             for idx_cls, uni_cls in enumerate(gt_labels,1):
@@ -116,43 +128,19 @@ def main(cfg):
                 for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==uni_cls]:
                     mask[hmin:hmax,wmin:wmax] = 1
                 refined_unary[idx_cls] *= mask
+                refined_unary_u0[idx_cls] *= mask
 
-            # Y_crf
+            # Y_crf and Y_crf_u0
             tmp_mask = refined_unary.argmax(0)
+            tmp_mask_u0 = refined_unary_u0.argmax(0)
             Y_crf = np.zeros_like(tmp_mask, dtype=np.uint8)
+            Y_crf_u0 = np.zeros_like(tmp_mask_u0, dtype=np.uint8)
             for idx_cls, uni_cls in enumerate(gt_labels,1):
                 Y_crf[tmp_mask==idx_cls] = uni_cls
+                Y_crf_u0[tmp_mask_u0==idx_cls] = uni_cls
             Y_crf[tmp_mask==0] = 0
+            Y_crf_u0[tmp_mask_u0==0] = 0
 
-            
-            # Code for CRF w/o u0
-            # CAMS for background class
-            w_c = WEIGHTS[0][None]
-            raw_cam = F.relu(torch.sum(w_c*features, dim=1)) # (1,H,W)
-            Bg_normed_cam = torch.zeros_like(raw_cam)
-            for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==0]:
-                denom = raw_cam[:,hmin:hmax,wmin:wmax].max() + 1e-12
-                Bg_normed_cam[:,hmin:hmax,wmin:wmax] = raw_cam[:,hmin:hmax,wmin:wmax] / denom
-
-
-            FgBg_unary = torch.cat((Fg_unary, Bg_normed_cam.detach().cpu()), dim=0).detach().cpu()
-            FgBg_unary[:,region_inside_bboxes] = torch.softmax(FgBg_unary[:,region_inside_bboxes], dim=0)
-            FgBg_refined_unary = dCRF.inference(rgb_img, FgBg_unary.numpy())
-
-            # (Out of bboxes) reset Fg scores to zero
-            for idx_cls, uni_cls in enumerate(gt_labels,1):
-                mask = np.zeros((img_H,img_W))
-                for wmin,hmin,wmax,hmax,_ in bboxes[bboxes[:,4]==uni_cls]:
-                    mask[hmin:hmax,wmin:wmax] = 1
-                FgBg_refined_unary[idx_cls] *= mask
-
-            # Y_crf_u0
-            FgBg_tmp_mask = FgBg_refined_unary.argmax(0)
-            Y_crf_u0 = np.zeros_like(FgBg_tmp_mask, dtype=np.uint8)
-            for idx_cls, uni_cls in enumerate(gt_labels,1):
-                Y_crf_u0[FgBg_tmp_mask==idx_cls] = uni_cls
-            Y_crf_u0[FgBg_tmp_mask==0] = 0
-            
 
             # Y_ret
             tmp_Y_crf = torch.from_numpy(Y_crf) # (H,W)
