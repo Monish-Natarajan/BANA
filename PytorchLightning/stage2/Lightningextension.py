@@ -84,8 +84,8 @@ class LightningModel(pl.LightningModule):
     def CHECK_SAVE_PSEUDO_LABLES(self):
         save_paths = []
         if self.cfg.SAVE_PSEUDO_LABLES:
-        folder_name = os.path.join(self.cfg.DATA.ROOT, self.cfg.NAME)
-        os.mkdir(folder_name)
+         folder_name = os.path.join(self.cfg.DATA.ROOT, self.cfg.NAME)
+         os.mkdir(folder_name)
         for txt in ("Y_crf", "Y_ret"):
             sub_folder = folder_name + f"/{txt}"
             os.mkdir(sub_folder)
