@@ -119,7 +119,7 @@ class LabelerLitModel(pl.LightningModule):
         "interval": "step",
         "frequency": 1,
         # Metric to to monitor for schedulers like `ReduceLROnPlateau`
-        "monitor": "train_loss" 
+        "monitor": "train_loss", 
         "strict": True,
         "name": None,
         }
