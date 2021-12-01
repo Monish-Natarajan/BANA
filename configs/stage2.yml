@@ -6,7 +6,7 @@ SEED: 0
 DATA: 
   ROOT: "/kaggle/working/data/VOCdevkit/VOC2012"
   NUM_CLASSES: 21 # For VOC
-  MODE: "train"
+  MODE: "val"
   
 MODEL:
   WEIGHTS: "ClsNet.pt" # From Stage 1
