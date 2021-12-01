@@ -69,7 +69,7 @@ class LabelerLitModel(pl.LightningModule):
         self.avgval_losses = []
         self.train_losses = []
         self.avgtrain_losses = []
-        # self.save_hyperparameters()           # to automatically log hyperparameters to W&B
+        self.save_hyperparameters()           # to automatically log hyperparameters to W&B
         self.load_weights(f"./weights/{cfg.MODEL.WEIGHTS}")  # Just loading pre-trained weights
 
     def training_step(self, batch, batch_idx):
