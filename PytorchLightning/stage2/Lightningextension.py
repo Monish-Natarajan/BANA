@@ -102,7 +102,7 @@ class LightningModel(pl.LightningModule):
         self.get_bg_attn(sample)
         self.get_unary(sample)
         Y_crf,Y_ret=self.get_Y_ret()
-        paths=self.CHECK_SAVE_PSEUDO_LABLES():
+        paths=self.CHECK_SAVE_PSEUDO_LABLES()
         if paths:
             for pseudo, save_path in zip([Y_crf, Y_ret],paths):
                 Image.fromarray(pseudo).save(save_path.format(sample["filenames"]))
