@@ -126,4 +126,4 @@ class LabelerLitModel(pl.LightningModule):
         return { "optimizer": optimizer,"lr_scheduler":lr_scheduler }
     
     def load_weights(self,path):
-        self.backbone.load_from_checkpoint(path)
+        self.backbone.load_state_dict(torch.load(path), strict=False)
