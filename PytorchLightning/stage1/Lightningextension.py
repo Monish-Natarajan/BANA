@@ -49,29 +49,11 @@ class VOCDataModule(pl.LightningDataModule):
         self.cfg=cfg 
     @ property
     def num_classes(self) -> int:
-        return self.cfg.DATA.NUM_CLASSES
-    def prepare_data(self):
-        # Not needed
-        pass 
+        return self.cfg.DATA.NUM_CLASSES 
     def setup(self):
-        if self.cfg.DATA.MODE == "train":
-            txt_name = "train_aug.txt"
-        if self.cfg.DATA.MODE == "val":
-            txt_name = "val.txt"
         self.dataset = VOC_box(self.cfg, self.transforms)
     def train_dataloader(self):
-        if self.cfg.DATA.MODE == "train":
             return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
-        return None
-    def val_dataloader(self):
-        if self.cfg.DATA.MODE == "val":
-            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
-        return None
-    def test_dataloader(self):
-        ''' NEED TO CHECK THIS'''
-        if self.cfg.DATA.MODE == "val":
-            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
-        return None
 
 
 class LabelerLitModel(pl.LightningModule):
@@ -88,8 +70,6 @@ class LabelerLitModel(pl.LightningModule):
         self.train_losses = []
         self.avgtrain_losses = []
         self.save_hyperparameters()           # to automatically log hyperparameters to W&B
-        # load checkpoint 
-        # need to see whether the function also works on .pt files
         self.load_weights(f"./weights/{cfg.MODEL.WEIGHTS}")  # Just loading pre-trained weights
 
     def training_step(self, batch, batch_idx):
@@ -99,15 +79,6 @@ class LabelerLitModel(pl.LightningModule):
          self.train_losses.append(loss.item())
          result=pl.TrainResult(loss)
          return result
-
-    def validation_step(self, batch, batch_idx):
-        if self.cfg.DATA.MODE == "val":
-             #to do... right now kept same as train
-             sample=val_batch                      # Need to check whether validation and training to be done at the same time
-             loss = common_step(sample)
-             self.val_losses.append(loss.item())
-             result=pl.EvalResult(loss)
-             return result
 
     def common_step(sample):
         img = sample["img"]
@@ -124,14 +95,6 @@ class LabelerLitModel(pl.LightningModule):
         loss = self.criterion(logits, target)
         return loss 
 
-    def validation_epoch_end(self, outputs):
-        self.avgval_losses.append(sum(self.val_losses) / len(self.val_losses))
-        self.val_losses=[]
-        if self.current_epoch()+1 % self.interval_verbose ==0:
-            # log
-            self.log("val-average-loss",sum(self.avgval_losses) / len(self.avgval_losses))
-            self.avgval_losses=[]
-
     def training_epoch_end(self, outputs):
         self.avgtrain_losses.append(sum(self.train_losses) / len(self.train_losses))
         self.train_losses=[]
@@ -139,19 +102,6 @@ class LabelerLitModel(pl.LightningModule):
             # log
             self.log("train-average-loss",sum(self.avgtrain_losses) / len(self.avgtrain_losses))
             self.avgtrain_losses=[] 
-    
-    def test_step(self, batch, batch_idx):
-        if self.cfg.DATA.MODE == "val":
-             #to do... right now kept same as validation
-             sample=val_batch                      # Need to check this
-             loss = common_step(sample)
-             result=pl.EvalResult(loss)
-             # ADD LOGGER-
-             return result
-    
-    def test_epoch_end(self, outputs):
-        # to do
-        pass
 
     def configure_optimizers(self):
         lr = self.cfg.SOLVER.LR
@@ -169,7 +119,7 @@ class LabelerLitModel(pl.LightningModule):
         "interval": "step",
         "frequency": 1,
         # Metric to to monitor for schedulers like `ReduceLROnPlateau`
-        "monitor": "train_loss" if self.cfg.DATA.MODE == "train" else "val_loss",
+        "monitor": "train_loss" 
         "strict": True,
         "name": None,
         }
