@@ -33,8 +33,8 @@ CLASSES = (
 
 # stage-1
 class VOC_box(Dataset):
-    def __init__(self, cfg, transforms=None,txt_name):
-        txt_name = "train_aug.txt"    # check this
+    def __init__(self, cfg, transforms=None):
+        txt_name = "train.txt"    # check this
         f_path = os.path.join(cfg.DATA.ROOT, "ImageSets/Segmentation", txt_name)
         self.filenames  = [x.split('\n')[0] for x in open(f_path)]
         self.transforms = transforms
