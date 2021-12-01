@@ -1,4 +1,4 @@
-import pytorch-lightning as pl
+import pytorch_lightning as pl
 import os
 import collections
 import numpy as np
