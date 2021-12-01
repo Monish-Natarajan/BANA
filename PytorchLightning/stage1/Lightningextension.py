@@ -31,7 +31,7 @@ def my_collate(batch):
     return sample
 
 class VOCDataModule(pl.LightningDataModule):
-    def __init__(cfg):
+    def __init__(self,cfg):
         super().__init__()
         # this line allows to access init params with 'self.hparams' attribute
         # Check whether to save hparams 
