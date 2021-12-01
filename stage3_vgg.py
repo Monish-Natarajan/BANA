@@ -62,15 +62,10 @@ def main(cfg):
         # region S where both the masks are predicting same
         S = (mask_crf == mask_ret)
 
-        H = nn.Softmax(dim=1)(logits) # applying softmax to the logits to obtain the probaility map for each class (21 classes)
-        L_ce =
+        L_ce = criterion(logits, mask_crf.long().cuda()) # cross entropy loss
         
-        logits = logits[...,0,0]
-        fg_t = bboxes[:,-1][:,None].expand(bboxes.shape[0], np.prod(cfg.MODEL.ROI_SIZE))
-        fg_t = fg_t.flatten().long()
-        target = torch.zeros(logits.shape[0], dtype=torch.long)
-        target[:fg_t.shape[0]] = fg_t
-        loss = criterion(logits, target.cuda())
+        Lam = 0.1
+        loss = L_ce + Lwce * Lam
 
         optimizer.zero_grad()
         loss.backward()
