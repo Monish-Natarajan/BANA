@@ -35,7 +35,7 @@ def main(cfg):
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
 
     # Restore the model saved on WandB
-    model_stage_1 = wandb.restore('weights/ClsNet.pt', run_path='dl-segmentation/MLRC-BANA/3tlmc1pv')
+    model_stage_1 = wandb.restore('weights/ClsNet.pt', run_path='dl-segmentation/MLRC-BANA/3gmasxud')
     model.load_state_dict(torch.load(model_stage_1.name))
 
     WEIGHTS = torch.clone(model.classifier.weight.data)
