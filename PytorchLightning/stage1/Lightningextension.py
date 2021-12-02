@@ -53,7 +53,7 @@ class VOCDataModule(pl.LightningDataModule):
     def setup(self,stage=None):
         self.dataset = VOC_box(self.cfg, self.transforms)
     def train_dataloader(self):
-            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=4,pin_memory=True,drop_last=True )
+            return DataLoader(self.dataset, batch_size=self.cfg.DATA.BATCH_SIZE,collate_fn=my_collate,shuffle=True,num_workers=2,pin_memory=True,drop_last=True )
 
 
 class LabelerLitModel(pl.LightningModule):
