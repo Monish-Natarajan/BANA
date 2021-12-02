@@ -75,12 +75,12 @@ class LabelerLitModel(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         if self.cfg.DATA.MODE == "train":
          sample=batch                       # Need to check whether validation and training to be done at the same time
-         loss = self.common_step(sample)
+         loss = common_step(sample)
          self.train_losses.append(loss.item())
          result=pl.TrainResult(loss)
          return result
 
-    def common_step(sample):
+    def common_step(self,sample):
         img = sample["img"]
         bboxes = sample["bboxes"]
         bg_mask = sample["bg_mask"]
