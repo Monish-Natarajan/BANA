@@ -90,7 +90,7 @@ class LabelerLitModel(pl.LightningModule):
         logits = logits[...,0,0]
         fg_t = bboxes[:,-1][:,None].expand(bboxes.shape[0], np.prod(self.cfg.MODEL.ROI_SIZE))
         fg_t = fg_t.flatten().long()
-        target = torch.zeros(logits.shape[0], dtype=torch.long,device=device = torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+        target = torch.zeros(logits.shape[0], dtype=torch.long,device=torch.device("cuda" if torch.cuda.is_available() else "cpu"))
         target[:fg_t.shape[0]] = fg_t
         loss = self.criterion(logits, target)
         return loss 
