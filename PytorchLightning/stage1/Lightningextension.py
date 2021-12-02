@@ -100,7 +100,7 @@ class LabelerLitModel(pl.LightningModule):
     def training_epoch_end(self,output):
         self.avgtrain_losses.append(sum(self.train_losses) / len(self.train_losses))
         self.train_losses=[]
-        if self.current_epoch()+1 % self.interval_verbose ==0:
+        if (self.current_epoch()+1) % self.interval_verbose ==0:
             # log
             self.log("train-average-loss",sum(self.avgtrain_losses) / len(self.avgtrain_losses))
             self.avgtrain_losses=[] 
