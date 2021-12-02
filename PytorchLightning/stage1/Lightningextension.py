@@ -77,8 +77,10 @@ class LabelerLitModel(pl.LightningModule):
          sample=batch                       # Need to check whether validation and training to be done at the same time
          loss = self.common_step(sample)
          self.train_losses.append(loss.item())
-         result=pl.TrainResult(loss)
-         return result
+        #  result=pl.TrainResult(loss)
+        #  return result
+         return loss 
+
 
     def common_step(self,sample):
         img = sample["img"]
@@ -95,7 +97,7 @@ class LabelerLitModel(pl.LightningModule):
         loss = self.criterion(logits, target)
         return loss 
 
-    def training_epoch_end(self, outputs):
+    def training_epoch_end(self,output):
         self.avgtrain_losses.append(sum(self.train_losses) / len(self.train_losses))
         self.train_losses=[]
         if self.current_epoch()+1 % self.interval_verbose ==0:
