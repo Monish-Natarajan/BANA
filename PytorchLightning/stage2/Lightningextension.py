@@ -94,7 +94,7 @@ class LightningModel(pl.LightningModule):
     
     def val_step(self, batch, batch_idx): 
         # check for validation/testing
-        sample=val_batch  
+        sample=batch 
         self.common_step(sample)  
     
     def common_step(self,sample):
