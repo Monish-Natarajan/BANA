@@ -10,6 +10,7 @@ import torchvision.transforms.functional as TF
 from tqdm.auto import tqdm
 from pathlib import Path
 import random
+from PIL import Image
 from typing import Any, Callable, List, Optional, Tuple
 
 class COCO_Segmentation(Dataset):
@@ -38,12 +39,14 @@ class COCO_Segmentation(Dataset):
             iscrowd=None
         )
         anns = self.annotations.loadAnns(ann_ids)
-        mask = torch.LongTensor(np.max(np.stack([self.annotations.annToMask(ann) * ann["category_id"] 
-                                                 for ann in anns]), axis=0)).unsqueeze(0)
-        
-        img = io.read_image(self.files[i])
-        if img.shape[0] == 1:
-            img = torch.cat([img]*3)
+        # mask = torch.LongTensor(np.max(np.stack([self.annotations.annToMask(ann) * ann["category_id"] 
+        #                                          for ann in anns]), axis=0)).unsqueeze(0)
+        mask = np.max(np.stack([self.annotations.annToMask(ann) * ann["category_id"] 
+                                                  for ann in anns]), axis=0)
+
+        img = np.asarray(Image.open(self.files[i]))
+        # if img.shape[0] == 1:
+        #     img = torch.cat([img]*3)
         
         if self.transform is not None:
             return self.transform(img, mask)
