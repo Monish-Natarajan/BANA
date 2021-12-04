@@ -19,7 +19,7 @@ class COCO_box(Dataset):
         img_ids = []
         for cat in cat_ids:
             img_ids.extend(self.coco.getImgIds(catIds=cat))   
-        self.ids = list(set(valid_img_ids))
+        self.ids = list(set(img_ids))
 
 
     def __getitem__(self, index):
