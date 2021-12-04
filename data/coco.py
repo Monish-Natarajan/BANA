@@ -1,0 +1,76 @@
+import os
+import collections
+import numpy as np
+import torch
+from torch.utils.data import Dataset,DataLoader
+import torchvision
+from PIL import Image
+from pycocotools.coco import COCO
+
+#root to be image folder
+
+class COCO_box(Dataset):
+    def __init__(self, root, annotation, transforms=None):
+        self.root = root
+        self.transforms = transforms
+        self.coco = COCO(annotation)
+        
+        cat_ids = self.coco.getCatIds()
+        img_ids = []
+        for cat in cat_ids:
+            img_ids.extend(self.coco.getImgIds(catIds=cat))   
+        self.ids = list(set(valid_img_ids))
+
+
+    def __getitem__(self, index):
+        # Own coco file
+        coco = self.coco
+        # Image ID
+        img_id = self.ids[index]
+        # List: get annotation id from coco
+        ann_ids = coco.getAnnIds(imgIds=img_id)
+        # Dictionary: target coco_annotation file for an image
+        coco_annotation = coco.loadAnns(ann_ids)
+        # path for input image
+        path = coco.loadImgs(img_id)[0]['file_name']
+        
+        # open the input image, convert to np array for transforms
+        img = np.array(Image.open(os.path.join(self.root, path)),dtype=np.float32)
+
+        # number of objects in the image
+        num_objs = len(coco_annotation)
+
+        # Bounding boxes for objects
+        # In coco format, bbox = [xmin, ymin, width, height]
+        # In pytorch, the input should be [xmin, ymin, xmax, ymax]
+        bboxes = []
+        for i in range(num_objs):
+            xmin = coco_annotation[i]['bbox'][0]
+            ymin = coco_annotation[i]['bbox'][1]
+            xmax = xmin + coco_annotation[i]['bbox'][2]
+            ymax = ymin + coco_annotation[i]['bbox'][3]
+            cls_num = coco_annotation[i]['category_id']
+            bboxes.append([xmin, ymin, xmax, ymax,cls_num])
+       
+        #converted to np array for transforms
+        bboxes = np.array(bboxes).astype('float32')
+        
+        #CHANGES TO BE MADE below
+        data_root = '/content/data'
+        mask_path = os.path.join(data_root,'BgMaskfromBoxes')
+        bg_mask = np.array(Image.open(os.path.join(mask_path,path[:-4]+'.png')), dtype=np.int32)
+        
+        if self.transforms is not None:
+            img, bboxes, bg_mask = self.transforms(img, bboxes, bg_mask)
+
+        return img, bboxes, bg_mask
+
+    def __len__(self):
+        return len(self.ids)
+
+    '''
+    Output format as required for Transforms
+    img    : (H, W, 3) numpy float32
+    bboxes : (wmin, hmin, wmax, hmax, cls) N x 5 numpy float32
+    bg_mask : (H, W) numpy int32
+    '''

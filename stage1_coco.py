@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from pycocotools.coco import COCO
 
 import data.transforms_bbox as Tr
-from data.coco_seg import COCO_Segmentation
+from data.coco import COCO_box
 from configs.defaults import _C
 from models.ClsNet import Labeler
 
@@ -70,17 +70,10 @@ def main(cfg):
 
     #COCO Specific Code
     
-    train_annotations = COCO(os.path.join(cfg.DATA.ROOT,"annotations/instances_train2017.json"))
-
-    cat_ids = train_annotations.getCatIds()
-    train_img_ids = []
-    for cat in cat_ids:
-        train_img_ids.extend(train_annotations.getImgIds(catIds=cat))
-    train_img_ids = list(set(train_img_ids))
-    print(f"Number of training images: {len(train_img_ids)}")
-
-    data_root = os.path.join(cfg.DATA.ROOT,'train2017')
-    trainset = COCO_Segmentation(train_annotations,train_img_ids,cat_ids,data_root,tr_transforms)
+    ann_path =  os.path.join(cfg.DATA.ROOT,'annotations/instances_val2017.json')
+    data_root = os.path.join(cfg.DATA.ROOT,'val2017')
+    
+    trainset = COCO_box(data_root,ann_path, tr_transforms)
     train_loader = DataLoader(trainset, batch_size=cfg.DATA.BATCH_SIZE, collate_fn=my_collate, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
     
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
