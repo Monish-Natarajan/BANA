@@ -21,6 +21,11 @@ class COCO_box(Dataset):
             img_ids.extend(self.coco.getImgIds(catIds=cat))   
         self.ids = list(set(img_ids))
 
+        cat_id_map = [-1]*91
+        for i in range(0,80):
+          cat_id_map[cat_ids[i]] = i
+        self.cat_id_map = cat_id_map
+
 
     def __getitem__(self, index):
         # Own coco file
@@ -49,7 +54,8 @@ class COCO_box(Dataset):
             ymin = coco_annotation[i]['bbox'][1]
             xmax = xmin + coco_annotation[i]['bbox'][2]
             ymax = ymin + coco_annotation[i]['bbox'][3]
-            cls_num = coco_annotation[i]['category_id']
+            cat_id = coco_annotation[i]['category_id']
+            cls_num = self.cat_id_map[cat_id]
             bboxes.append([xmin, ymin, xmax, ymax,cls_num])
        
         #converted to np array for transforms
