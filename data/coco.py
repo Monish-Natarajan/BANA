@@ -63,7 +63,7 @@ class COCO_box(Dataset):
         
         #CHANGES TO BE MADE below
         #mask_path = os.path.join(data_root,'BgMaskfromBoxes')
-        mask_path = "/kaggle/working/data/BgMaskfromBoxes"
+        mask_path = "/kaggle/working/BgMaskfromBoxes"
         bg_mask = np.array(Image.open(os.path.join(mask_path,path[:-4]+'.png')), dtype=np.int32)
         
         if self.transforms is not None:

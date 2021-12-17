@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from pycocotools.coco import COCO
+import wandb
 
 import data.transforms_bbox as Tr
 from data.coco import COCO_box
@@ -17,6 +18,8 @@ from models.ClsNet import Labeler
 
 logger = logging.getLogger("stage1")
 
+run_id = "18qvf5x4"
+wandb.init(project="BANA", name="FINAL_TRIAL",resume='allow')
 
 def my_collate(batch):
     '''
@@ -68,16 +71,17 @@ def main(cfg):
         Tr.Normalize_Caffe(),
     ])
 
-    #COCO Specific Code
-    
-    ann_path =  os.path.join(cfg.DATA.ROOT,'annotations/instances_val2017.json')
-    data_root = os.path.join(cfg.DATA.ROOT,'val2017')
+    #Important initializations
+    prev_iter=0
+    first_run = True
+
+    ann_path =  os.path.join(cfg.DATA.ROOT,'annotations/instances_train2017.json')
+    data_root = os.path.join(cfg.DATA.ROOT,'train2017')
     
     trainset = COCO_box(data_root,ann_path, tr_transforms)
     train_loader = DataLoader(trainset, batch_size=cfg.DATA.BATCH_SIZE, collate_fn=my_collate, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
     
     model = Labeler(cfg.DATA.NUM_CLASSES, cfg.MODEL.ROI_SIZE, cfg.MODEL.GRID_SIZE).cuda()
-    model.backbone.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"), strict=False)
     
     params = model.get_params()
     lr = cfg.SOLVER.LR
@@ -92,12 +96,26 @@ def main(cfg):
     scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=cfg.SOLVER.MILESTONES, gamma=0.1)
     criterion = nn.CrossEntropyLoss()
     
+    if(first_run==True):
+      model.backbone.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"), strict=False)
+    else:
+      wandb_checkpoint = wandb.restore("checkpoint.pt",run_path=f"monish/BANA/{run_id}")
+      checkpoint = torch.load(wandb_checkpoint.name)
+      print(wandb_checkpoint.name)
+      prev_iter = checkpoint['iteration']
+      model.load_state_dict(checkpoint['model_state_dict'])
+      optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+      print("RESUMING")
+      print("Prev_iter  ",prev_iter)
+
     model.train()
     iterator = iter(train_loader)
     storages = {"CE": 0,}
     interval_verbose = cfg.SOLVER.MAX_ITER // 40
     logger.info(f"START {cfg.NAME} -->")
-    for it in range(1, cfg.SOLVER.MAX_ITER+1):
+    
+    #starts from prev_iter+1
+    for it in range(prev_iter+1, cfg.SOLVER.MAX_ITER+1):
         try:
             sample = next(iterator)
         except:
@@ -120,11 +138,28 @@ def main(cfg):
         optimizer.step()
         scheduler.step()
         storages["CE"] += loss.item()
-        if it % interval_verbose == 0:
+
+        wandb.log({"loss":loss.item(),"learning rate":optimizer.param_groups[0]["lr"]},step=it)
+        print("Loss: {}     Iter: {}".format(loss.item(),it))
+
+        if (it-prev_iter) % interval_verbose == 0:
             for k in storages.keys(): storages[k] /= interval_verbose
-            logger.info("{:3d}/{:3d}  Loss (CE): {:.4f}  lr: {}".format(it, cfg.SOLVER.MAX_ITER, storages["CE"], optimizer.param_groups[0]["lr"]))
             for k in storages.keys(): storages[k] = 0
-    torch.save(model.state_dict(), f"./weights/{cfg.NAME}.pt")
+        
+        
+    #END Training
+
+    print("Saving Iteration: {}".format(it))
+    torch.save({
+            'iteration': it,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': storages["CE"],
+            }, "/content/data/checkpoint.pt")
+    
+    wandb.save("/content/data/checkpoint.pt")
+    wandb.finish()
+
     logger.info("--- SAVED ---")
     logger.info(f"END {cfg.NAME} -->")
 
