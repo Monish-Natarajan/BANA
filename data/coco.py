@@ -2,6 +2,7 @@ import os
 import collections
 import numpy as np
 import torch
+import logging
 from torch.utils.data import Dataset,DataLoader
 import torchvision
 from PIL import Image
@@ -25,7 +26,6 @@ class COCO_box(Dataset):
         for i in range(0,80):
           cat_id_map[cat_ids[i]] = i
         self.cat_id_map = cat_id_map
-
 
     def __getitem__(self, index):
         # Own coco file
@@ -62,14 +62,18 @@ class COCO_box(Dataset):
         bboxes = np.array(bboxes).astype('float32')
         
         #CHANGES TO BE MADE below
-        #mask_path = os.path.join(data_root,'BgMaskfromBoxes')
-        mask_path = "/kaggle/working/BgMaskfromBoxes"
+        mask_path = '/content/data/BgMaskfromBoxes'
         bg_mask = np.array(Image.open(os.path.join(mask_path,path[:-4]+'.png')), dtype=np.int32)
         
         if self.transforms is not None:
             img, bboxes, bg_mask = self.transforms(img, bboxes, bg_mask)
 
         return img, bboxes, bg_mask
+
+    def filename(self,index):
+      img_id = self.ids[index]
+      path = self.coco.loadImgs(img_id)[0]['file_name']
+      return path[:-4],os.path.join(self.root, path)
 
     def __len__(self):
         return len(self.ids)

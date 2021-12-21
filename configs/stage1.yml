@@ -3,7 +3,7 @@ NAME: "ClsNet"
 SEED: 0
 
 DATA: 
-  ROOT: "/kaggle/input/coco-2017-dataset/coco2017"
+  ROOT: "/content/data"
   NUM_CLASSES: 81 # For COCO
   MODE: "train"
   BATCH_SIZE: 20
