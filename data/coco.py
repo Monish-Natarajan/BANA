@@ -24,7 +24,7 @@ class COCO_box(Dataset):
 
         cat_id_map = [-1]*91
         for i in range(0,80):
-          cat_id_map[cat_ids[i]] = i
+          cat_id_map[cat_ids[i]] = i+1
         self.cat_id_map = cat_id_map
 
     def __getitem__(self, index):
