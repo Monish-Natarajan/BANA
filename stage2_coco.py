@@ -114,7 +114,7 @@ def main(cfg):
             unary[:,region_inside_bboxes] = torch.softmax(unary[:,region_inside_bboxes], dim=0)
             refined_unary = dCRF.inference(rgb_img, unary.numpy())
 
-            print("Fg_unary Fg_unary refined_unary",Fg_unary.shape,Bg_unary.shape,refined_unary.shape)
+            #print("Fg_unary Fg_unary refined_unary",Fg_unary.shape,Bg_unary.shape,refined_unary.shape)
             
             # (Out of bboxes) reset Fg scores to zero
             for idx_cls, uni_cls in enumerate(gt_labels,1):
