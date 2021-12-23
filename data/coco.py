@@ -20,7 +20,24 @@ class COCO_box(Dataset):
         img_ids = []
         for cat in cat_ids:
             img_ids.extend(self.coco.getImgIds(catIds=cat))   
-        self.ids = list(set(img_ids))
+        img_ids = list(set(img_ids))
+
+        print("Number of Images : ",len(img_ids))
+
+        #inefficient method improvise 
+        #remove all grayscale images
+        gray_count = 0
+        for id in img_ids:
+            file_name = self.coco.loadImgs(ids=id)[0]['file_name']
+            img = np.asarray(Image.open(os.path.join(root,file_name)))
+            if img.ndim == 2:
+                img_ids.remove(id)
+                gray_count = gray_count + 1
+        
+        print("Number of grayscale images : ",gray_count)
+        print("Final Number of Images : ",len(img_ids))
+
+        self.ids = img_ids
 
         cat_id_map = [-1]*91
         for i in range(0,80):
