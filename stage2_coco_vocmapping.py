@@ -193,9 +193,6 @@ def main(cfg):
             if cfg.SAVE_PSEUDO_LABLES:
                 for pseudo, save_path in zip([Y_crf, Y_ret], save_paths):
                     Image.fromarray(pseudo).save(save_path.format(fn))
-            
-            if  it==20:
-              break
 
     logger.info(f"END {cfg.NAME} -->")
 
