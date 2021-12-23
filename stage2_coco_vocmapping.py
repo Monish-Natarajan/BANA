@@ -75,7 +75,7 @@ def main(cfg):
     dCRF = DENSE_CRF(bi_w, bi_xy_std, bi_rgb_std, pos_w, pos_xy_std)
     
     if cfg.SAVE_PSEUDO_LABLES:
-        folder_name = os.path.join('/content/data', cfg.NAME)
+        folder_name = os.path.join('/kaggle/working', cfg.NAME)
         os.mkdir(folder_name)
         save_paths = []
         for txt in ("Y_crf_COCO", "Y_ret_COCO"):
