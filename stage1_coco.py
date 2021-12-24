@@ -19,7 +19,7 @@ from models.ClsNet import Labeler
 logger = logging.getLogger("stage1")
 
 run_id = "18qvf5x4"
-wandb.init(project="BANA", name="Stage1_COCO_Train_Kaggle_10_15_am",resume='never')
+wandb.init(project="BANA", name="Stage1_COCO_Train_Kaggle_11_20_am",resume='never')
 
 def my_collate(batch):
     '''
@@ -155,9 +155,9 @@ def main(cfg):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': storages["CE"],
-            }, "/content/data/checkpoint.pt")
+            }, "/kaggle/working/checkpoint.pt")
     
-    wandb.save("/content/data/checkpoint.pt")
+    wandb.save("/kaggle/working/checkpoint.pt")
     wandb.finish()
 
     logger.info("--- SAVED ---")
