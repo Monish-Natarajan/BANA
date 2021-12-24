@@ -100,7 +100,7 @@ def main(cfg):
     if(first_run==True):
       model.backbone.load_state_dict(torch.load(f"./weights/{cfg.MODEL.WEIGHTS}"), strict=False)
     else:
-      wandb_checkpoint = wandb.restore("checkpoint.pt",run_path=f"monish/BANA/{run_id}")
+      wandb_checkpoint = wandb.restore("checkpoint_1000.pt",run_path=f"monish/BANA/{run_id}")
       checkpoint = torch.load(wandb_checkpoint.name)
       print(wandb_checkpoint.name)
       prev_iter = checkpoint['iteration']
@@ -157,9 +157,9 @@ def main(cfg):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': storages["CE"],
-            }, "/kaggle/working/checkpoint_1000.pt")
+            }, "/kaggle/working/checkpoint_11000.pt")
     
-    wandb.save("/kaggle/working/checkpoint_1000.pt")
+    wandb.save("/kaggle/working/checkpoint_11000.pt")
     wandb.finish()
 
     logger.info("--- SAVED ---")
