@@ -79,7 +79,7 @@ class COCO_box(Dataset):
         bboxes = np.array(bboxes).astype('float32')
         
         #CHANGES TO BE MADE below
-        mask_path = '/kaggle/working/BgMaskfromBoxes'
+        mask_path = '/kaggle/input/coco-train-bgmaskfromboxes/kaggle/working/BgMaskfromBoxes'
         bg_mask = np.array(Image.open(os.path.join(mask_path,path[:-4]+'.png')), dtype=np.int32)
         
         if self.transforms is not None:
