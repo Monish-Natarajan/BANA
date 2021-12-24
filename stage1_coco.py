@@ -15,6 +15,7 @@ import data.transforms_bbox as Tr
 from data.coco import COCO_box
 from configs.defaults import _C
 from models.ClsNet import Labeler
+from tqdm import tqdm
 
 logger = logging.getLogger("stage1")
 
@@ -115,7 +116,7 @@ def main(cfg):
     logger.info(f"START {cfg.NAME} -->")
     
     #starts from prev_iter+1
-    for it in range(prev_iter+1, cfg.SOLVER.MAX_ITER + prev_iter+1):
+    for it in tqdm(range(prev_iter+1, cfg.SOLVER.MAX_ITER + prev_iter+1)):
         try:
             sample = next(iterator)
         except:
@@ -140,7 +141,7 @@ def main(cfg):
         storages["CE"] += loss.item()
 
         wandb.log({"loss":loss.item(),"learning rate":optimizer.param_groups[0]["lr"]},step=it)
-        if it%100==0:
+        if it%10==0:
             print("Loss: {}\tIter: {}".format(loss.item(),it))
 
         if (it-prev_iter) % interval_verbose == 0:
