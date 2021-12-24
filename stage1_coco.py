@@ -19,7 +19,7 @@ from models.ClsNet import Labeler
 logger = logging.getLogger("stage1")
 
 run_id = "25nc83cq"
-wandb.init(id = run_ind, project="BANA", name="Stage1_COCO_Train_Kaggle_11_20_am",resume='must')
+wandb.init(id = run_id, project="BANA", name="Stage1_COCO_Train_Kaggle_11_20_am",resume='must')
 
 def my_collate(batch):
     '''
