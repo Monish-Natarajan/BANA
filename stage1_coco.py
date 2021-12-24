@@ -157,9 +157,9 @@ def main(cfg):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': storages["CE"],
-            }, "/kaggle/working/checkpoint_600.pt")
+            }, "/kaggle/working/checkpoint_10500.pt")
     
-    wandb.save("/kaggle/working/checkpoint_600.pt")
+    wandb.save("/kaggle/working/checkpoint_10500.pt")
     wandb.finish()
 
     logger.info("--- SAVED ---")
