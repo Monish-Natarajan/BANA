@@ -26,15 +26,17 @@ class COCO_box(Dataset):
 
         #inefficient method improvise 
         #remove all grayscale images
-        gray_count = 0
-        for id in img_ids:
-            file_name = self.coco.loadImgs(ids=id)[0]['file_name']
-            img = np.asarray(Image.open(os.path.join(root,file_name)))
-            if img.ndim == 2:
-                img_ids.remove(id)
-                gray_count = gray_count + 1
+        # gray_count = 0
+        # for id in img_ids:
+        #     file_name = self.coco.loadImgs(ids=id)[0]['file_name']
+        #     img = np.asarray(Image.open(os.path.join(root,file_name)))
+        #     if img.ndim == 2:
+        #         img_ids.remove(id)
+        #         gray_count = gray_count + 1
+        gray_ids = set(np.load('/kaggle/input/coco-train-bgmaskfromboxes/coco_train_grayscale_ids.npy'))
+        img_ids = list(set(img_ids) - gray_ids)
         
-        print("Number of grayscale images : ",gray_count)
+        print("Number of grayscale images : ",len(gray_ids)
         print("Final Number of Images : ",len(img_ids))
 
         self.ids = img_ids

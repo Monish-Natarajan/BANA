@@ -140,7 +140,8 @@ def main(cfg):
         storages["CE"] += loss.item()
 
         wandb.log({"loss":loss.item(),"learning rate":optimizer.param_groups[0]["lr"]},step=it)
-        print("Loss: {}     Iter: {}".format(loss.item(),it))
+        if it%100==0:
+            print("Loss: {}\tIter: {}".format(loss.item(),it))
 
         if (it-prev_iter) % interval_verbose == 0:
             for k in storages.keys(): storages[k] /= interval_verbose
