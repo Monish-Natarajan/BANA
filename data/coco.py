@@ -36,7 +36,7 @@ class COCO_box(Dataset):
         gray_ids = set(np.load('/kaggle/input/coco-train-bgmaskfromboxes/coco_train_grayscale_ids.npy'))
         img_ids = list(set(img_ids) - gray_ids)
         
-        print("Number of grayscale images : ",len(gray_ids)
+        print("Number of grayscale images : ",len(gray_ids))
         print("Final Number of Images : ",len(img_ids))
 
         self.ids = img_ids
