@@ -115,7 +115,7 @@ def main(cfg):
     logger.info(f"START {cfg.NAME} -->")
     
     #starts from prev_iter+1
-    for it in range(prev_iter+1, cfg.SOLVER.MAX_ITER+1):
+    for it in range(prev_iter+1, cfg.SOLVER.MAX_ITER + prev_iter+1):
         try:
             sample = next(iterator)
         except:
