@@ -159,7 +159,7 @@ def main(cfg):
             'loss': storages["CE"],
             }, "/kaggle/working/checkpoint.pt")
     
-    wandb.save("/kaggle/working/checkpoint.pt",base_path='/WEIGHTS')
+    wandb.save("/kaggle/working/checkpoint.pt")
     wandb.finish()
 
     logger.info("--- SAVED ---")
