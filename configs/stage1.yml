@@ -16,8 +16,8 @@ MODEL:
   GAP: False
 
 SOLVER:
-  LR: 1e-3 
+  LR: 1e-4 
   MOMENTUM: 0.9
   WEIGHT_DECAY: 5e-4
-  MAX_ITER: 8000
+  MAX_ITER: 17556
   MILESTONES: []
